@@ -1,8 +1,2 @@
-docker run -d \
-  --name mosquitto \
-  -p 1883:1883 \
-  -v $(pwd)/mosquitto/config:/mosquitto/config \
-  -v $(pwd)/mosquitto/data:/mosquitto/data \
-  -v $(pwd)/mosquitto/log:/mosquitto/log \
-  eclipse-mosquitto:latest
+docker run -it -p 1883:1883 -v "$PWD/mosquitto/config:/mosquitto/config" -v /mosquitto/data -v /mosquitto/log eclipse-mosquitto
 
