@@ -22,7 +22,6 @@ class KalmanFilter:
         self.R = R
 
     def predict(self):
-
         #update system state
         self.x = self.A @ self.x
 
@@ -30,7 +29,6 @@ class KalmanFilter:
         self.P = self.A @ self.P @ self.A.T + self.Q
 
     def update(self, z):
-        
         #kalman gain
         K = (self.P @ self.H.T) @ np.linalg.inv(self.H @ self.P @ self.H.T + self.R)
 
@@ -41,8 +39,10 @@ class KalmanFilter:
         self.P = self.P - K @ self.H @ self.P
 
     def step(self, z):
-
+        #run prediction step
         self.predict()
+        #run update step
         self.update(z)
 
+        #return prdicted values
         return self.x, self.P
