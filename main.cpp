@@ -1,4 +1,5 @@
 #include <string.h>
+#include <stdio.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_wifi.h"
@@ -41,6 +42,21 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
     }
 }
 
+static void rssi_publish_task(void *pvParameter)
+{
+    wifi_ap_record_t ap_info;
+    char message[50];
+
+    while (true) {
+        if (esp_wifi_sta_get_ap_info(&ap_info) == ESP_OK) {
+            sprintf(message, "RSSI: %d dBm", ap_info.rssi);
+            ESP_LOGI(TAG, "Publishing RSSI: %s", message);
+            esp_mqtt_client_publish(mqtt_client, MQTT_TOPIC, message, 0, 1, 0);
+        }
+        vTaskDelay(pdMS_TO_TICKS(2000));  // Publish every 2 seconds
+    }
+}
+
 extern "C" void app_main()
 {
     nvs_flash_init();
@@ -80,14 +96,14 @@ extern "C" void app_main()
     esp_mqtt_client_config_t mqtt_cfg = {};
     mqtt_cfg.broker.address.uri = MQTT_BROKER_URI;
 
-
-
     mqtt_client = esp_mqtt_client_init(&mqtt_cfg);
     esp_mqtt_client_register_event(mqtt_client, MQTT_EVENT_ANY, mqtt_event_handler, NULL);
 
-    // Task will now yield control, events handled by callbacks
+    xTaskCreate(&rssi_publish_task, "rssi_publish_task", 4096, NULL, 5, NULL);
+
     while (true) {
         vTaskDelay(pdMS_TO_TICKS(1000));
     }
 }
+
 
