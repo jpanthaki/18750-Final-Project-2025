@@ -7,12 +7,16 @@
 #include "esp_log.h"
 #include "nvs_flash.h"
 #include "mqtt_client.h"
+#include "esp_netif.h"
+#include "lwip/inet.h"
+#include "ping/ping_sock.h"
 
 static const char *TAG = "mqtt_example";
 
 #define WIFI_SSID "CMU-DEVICE"
 #define MQTT_BROKER_URI "mqtt://172.26.49.86"
 #define MQTT_TOPIC "test/topic"
+#define TARGET_IP_ADDRESS "172.26.49.243"
 
 static esp_mqtt_client_handle_t mqtt_client;
 
@@ -42,19 +46,36 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
     }
 }
 
-static void rssi_publish_task(void *pvParameter)
+static void ping_task(void *pvParameter)
 {
-    wifi_ap_record_t ap_info;
-    char message[50];
+    esp_ping_config_t ping_config = ESP_PING_DEFAULT_CONFIG();
+    ip_addr_t target_addr;
+    ipaddr_aton(TARGET_IP_ADDRESS, &target_addr);
+    ping_config.target_addr = target_addr;
+    ping_config.count = 1;
+    ping_config.interval_ms = 1000;
+
+    esp_ping_callbacks_t cbs = {};
+    esp_ping_handle_t ping;
+
+    esp_ping_new_session(&ping_config, &cbs, &ping);
+
+    char message[64];
+    uint32_t elapsed_time_ms;
 
     while (true) {
-        if (esp_wifi_sta_get_ap_info(&ap_info) == ESP_OK) {
-            sprintf(message, "RSSI: %d dBm", ap_info.rssi);
-            ESP_LOGI(TAG, "Publishing RSSI: %s", message);
-            esp_mqtt_client_publish(mqtt_client, MQTT_TOPIC, message, 0, 1, 0);
-        }
+        esp_ping_start(ping);
+        vTaskDelay(pdMS_TO_TICKS(1500));  // Wait for ping to complete
+
+        esp_ping_get_profile(ping, ESP_PING_PROF_DURATION, &elapsed_time_ms, sizeof(elapsed_time_ms));
+        snprintf(message, sizeof(message), "Ping %s: %lu ms", TARGET_IP_ADDRESS, elapsed_time_ms);
+        ESP_LOGI(TAG, "%s", message);
+        esp_mqtt_client_publish(mqtt_client, MQTT_TOPIC, message, 0, 1, 0);
+
         vTaskDelay(pdMS_TO_TICKS(2000));  // Publish every 2 seconds
     }
+
+    esp_ping_delete_session(ping);
 }
 
 extern "C" void app_main()
@@ -99,11 +120,13 @@ extern "C" void app_main()
     mqtt_client = esp_mqtt_client_init(&mqtt_cfg);
     esp_mqtt_client_register_event(mqtt_client, MQTT_EVENT_ANY, mqtt_event_handler, NULL);
 
-    xTaskCreate(&rssi_publish_task, "rssi_publish_task", 4096, NULL, 5, NULL);
+    xTaskCreate(&ping_task, "ping_task", 4096, NULL, 5, NULL);
 
     while (true) {
         vTaskDelay(pdMS_TO_TICKS(1000));
     }
 }
+
+
 
 
