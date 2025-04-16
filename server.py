@@ -125,6 +125,26 @@ def setup_anchors():
         # It's good practice to log the exception e
         return jsonify({"success": False, "error": "An internal server error occurred"}), 500
     
+
+@app.route("/toggle_mode", methods=["POST"])
+def send_to_node():
+    global mqttc
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({"success": False, "error": "No JSON data provided"}), 400
+
+        # Convert data to JSON string
+        payload = json.dumps(data)
+
+        # Publish to "node" topic
+        mqttc.publish("node", payload)
+        return jsonify({"success": True, "message": "Data published to 'node' topic."})
+    except Exception as e:
+        print(f"Error publishing to node: {e}")
+        return jsonify({"success": False, "error": "Failed to publish message"}), 500
+
+    
 @app.route("/trilaterate")
 def get_trilateration_data():
     global calculator, receivers
@@ -162,6 +182,8 @@ def get_trilateration_data():
         print(f"Error during trilateration: {e}")
          # Log the exception e
         return jsonify({"position": None, "error": "An internal server error occurred during trilateration."}), 500
+    
+
 
 if __name__ == "__main__":
     # It's better to initialize MQTT client here and pass it or manage its scope carefully.

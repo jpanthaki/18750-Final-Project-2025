@@ -15,8 +15,38 @@ export default function Home() {
   const [anchorsToPlot, setAnchorsToPlot] = useState<Position[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [mode, setMode] = useState<boolean>(false);
+
 
   const API_BASE_URL = "http://localhost:5001"; // Your Flask server URL
+
+  const handleSendToNode = async () => {
+    const newMode = !mode;
+    setMode(newMode);
+    try {
+      const response = await fetch(`${API_BASE_URL}/toggle_mode`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ mode: newMode }), // Send the mode toggle to the server
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || `HTTP error! status: ${response.status}`);
+      }
+
+      // Handle response success (optional: log success or show a message)
+      console.log("Mode toggled successfully!");
+    } catch (err: any) {
+      console.error("Error sending command to the server:", err);
+    }
+  };
+
+ 
+  
 
   // Handle change in number of anchors selection
   const handleNumAnchorsChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
@@ -260,6 +290,19 @@ export default function Home() {
           </button>
         </div>
       )}
+            {/* Send Command to Node */}
+      <div className="mt-8 w-full max-w-md bg-gray-800 p-6 rounded-lg shadow-lg">
+        <h3 className="text-lg font-semibold text-center mb-4">Send Command to Node</h3>
+        
+          
+          <button
+            onClick={handleSendToNode}
+            className="py-2 px-4 bg-green-600 hover:bg-green-700 rounded-md text-white font-semibold w-full"
+          >
+            Change Mode
+          </button>
+      </div>
+
     </div>
   );
 }
