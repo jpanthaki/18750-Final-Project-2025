@@ -15,13 +15,13 @@ export default function Home() {
   const [anchorsToPlot, setAnchorsToPlot] = useState<Position[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [mode, setMode] = useState<boolean>(false);
+  const [mode, setMode] = useState<string>("wifi");
 
 
   const API_BASE_URL = "http://localhost:5001"; // Your Flask server URL
 
   const handleSendToNode = async () => {
-    const newMode = !mode;
+    const newMode = mode === "wifi" ? "bt" : "wifi";
     setMode(newMode);
     try {
       const response = await fetch(`${API_BASE_URL}/toggle_mode`, {
@@ -292,15 +292,38 @@ export default function Home() {
       )}
             {/* Send Command to Node */}
       <div className="mt-8 w-full max-w-md bg-gray-800 p-6 rounded-lg shadow-lg">
-        <h3 className="text-lg font-semibold text-center mb-4">Send Command to Node</h3>
-        
-          
-          <button
-            onClick={handleSendToNode}
-            className="py-2 px-4 bg-green-600 hover:bg-green-700 rounded-md text-white font-semibold w-full"
-          >
-            Change Mode
-          </button>
+        <h3 className="text-lg font-semibold text-center mb-4">Change Communcation Mode:</h3>
+        <div style={{
+        display: 'flex',
+        gap: '1rem',
+        alignItems: 'center',
+        justifyContent: 'center'
+      }}>
+        <label>
+          <input
+            type="radio"
+            name="mode"           // same name groups them
+            value="wifi"           // identifies this radio
+            checked={mode === 'wifi'}
+            onChange={handleSendToNode}
+          />
+          WiFi
+        </label>
+
+        <label style={{ marginLeft: '1rem' }}>
+          <input
+            type="radio"
+            name="mode"
+            value="bluetooth"
+            checked={mode === 'bt'}
+            onChange={handleSendToNode}
+          />
+          Bluetooth
+        </label>
+
+
+      </div>
+
       </div>
 
     </div>

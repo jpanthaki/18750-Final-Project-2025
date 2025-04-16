@@ -138,8 +138,8 @@ def send_to_node():
         payload = json.dumps(data)
 
         # Publish to "node" topic
-        mqttc.publish("node", payload)
-        return jsonify({"success": True, "message": "Data published to 'node' topic."})
+        mqttc.publish("mode", payload)
+        return jsonify({"success": True, "message": "Data published to 'mode' topic."})
     except Exception as e:
         print(f"Error publishing to node: {e}")
         return jsonify({"success": False, "error": "Failed to publish message"}), 500
