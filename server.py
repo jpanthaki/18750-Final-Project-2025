@@ -36,14 +36,14 @@ def on_unsubscribe(client, userdata, mid, reason_code_list, properties):
 
 def on_message(client, userdata, message):
     try:
-        dmessage = message.payload.decode('utf-8')
-        data = json.loads(dmessage)
-        
-        filtered_rssi = receivers[message.topic]["filter"].step(data["rssi"])
+        data = message.payload.decode('utf-8')
+        fl_data = float(data)
+        filtered_rssi = receivers[message.topic]["filter"].step(fl_data)
         receivers[message.topic]["data"].append(filtered_rssi)
+        # print("Received ", fl_data, "filtered: ", filtered_rssi)
+        print("Received ", fl_data, "from topic: ", message.topic)
     except Exception as e:
         print(f"Error occured processing message: {e}")
-    print(message.payload.decode('utf-8'))
 
 def on_connect(client, userdata, flags, reason_code, properties):
     if reason_code.is_failure:
@@ -57,7 +57,7 @@ def on_connect(client, userdata, flags, reason_code, properties):
 def prepare_receivers(n):
     receivers = {}
     
-    for i in range(n):
+    for i in range(1, n+1):
         topic_name = f"receiver/{i}"
         receivers[topic_name] = {"data": deque([-5.0],maxlen=10), "filter": KalmanFilter()}
         # Subscribe to each receiver topic individually
@@ -96,7 +96,7 @@ def setup_anchors():
              try:
                  x = float(pos[0])
                  y = float(pos[1])
-                 positions.append((x, y))
+                 positions.append(((x, y), -45))
              except (ValueError, TypeError):
                   return jsonify({"success": False, "error": f"Position {i} coordinates must be numbers"}), 400
         print("anchors = ", positions)

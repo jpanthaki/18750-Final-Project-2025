@@ -18,13 +18,23 @@ class TrilaterationCalculator:
 
         res = []
 
-        for i, (ax, ay) in enumerate(self.anchors):
+        for i, ((ax, ay), _) in enumerate(self.anchors):
             d = distances[i]
 
+            
             residual = (x - ax) ** 2 + (y - ay) ** 2 - (offset - d) ** 2
+            
             res.append(residual)
 
         return np.array(res)
+
+    def get_position(self, rssi_values):
+
+        distances = []
+
+        for rssi, anchor in zip(rssi_values, self.anchors):
+            # print(rssi, anchor[1])
+            distances.append(self.get_distance(rssi, anchor[1]))
 
     def get_position(self, rssi_values):
 

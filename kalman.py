@@ -45,4 +45,4 @@ class KalmanFilter:
         self.update(z)
 
         #return prdicted values
-        return self.x, self.P
+        return self.x[0][0]
